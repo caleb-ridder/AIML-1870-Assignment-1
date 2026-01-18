@@ -203,10 +203,14 @@
                 // Random angle in radians
                 const angle = Math.random() * Math.PI * 2;
 
-                // Start position based on spawn radius
-                this.x = centerX + Math.cos(angle) * spawnRadius;
-                this.y = centerY + Math.sin(angle) * spawnRadius;
-                this.z = 0;
+                // Random z-position for even distribution
+                const randomZ = Math.random() * 300;
+
+                // Start position based on spawn radius and z-depth
+                const depthOffset = randomZ * 2;
+                this.x = centerX + Math.cos(angle) * (spawnRadius + depthOffset);
+                this.y = centerY + Math.sin(angle) * (spawnRadius + depthOffset);
+                this.z = randomZ;
 
                 // Velocity with random speed variation
                 const speedVariation = 0.5 + Math.random() * 2;
