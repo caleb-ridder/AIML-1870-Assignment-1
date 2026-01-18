@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle System - 3D Starfield</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        #canvas {
+            border: 2px solid #fff;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+            background: #000;
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            min-width: 250px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .control-group .value {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            outline: none;
+            cursor: pointer;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        input[type="range"]:hover::-webkit-slider-thumb {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        input[type="range"]:hover::-moz-range-thumb {
+            box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
+
+        .reset-button {
+            width: 100%;
+            padding: 12px;
+            background: rgba(76, 175, 80, 0.8);
+            color: #fff;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        .reset-button:hover {
+            background: rgba(76, 175, 80, 1);
+            box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+            transform: translateY(-2px);
+        }
+
+        .reset-button:active {
+            transform: translateY(0);
+        }
+
+        h2 {
+            margin-bottom: 20px;
+            font-size: 18px;
+            text-align: center;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas" width="1200" height="800"></canvas>
+
+        <div class="controls">
+            <h2>Controls</h2>
+
+            <div class="control-group">
+                <label>
+                    <span>Trail Length</span>
+                    <span class="value" id="trailValue">15</span>
+                </label>
+                <input type="range" id="trailLength" min="5" max="50" value="15">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <span>Star Count</span>
+                    <span class="value" id="countValue">500</span>
+                </label>
+                <input type="range" id="starCount" min="100" max="2000" step="50" value="500">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <span>Star Speed</span>
+                    <span class="value" id="speedValue">2</span>
+                </label>
+                <input type="range" id="starSpeed" min="0.5" max="10" step="0.5" value="2">
+            </div>
+
+            <div class="control-group">
+                <label>
+                    <span>Spawn Radius</span>
+                    <span class="value" id="radiusValue">0</span>
+                </label>
+                <input type="range" id="spawnRadius" min="0" max="200" step="10" value="0">
+            </div>
+
+            <button class="reset-button" id="resetButton">Reset to Defaults</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+
+        // Control values
+        let trailLength = 15;
+        let starCount = 500;
+        let starSpeed = 2;
+        let spawnRadius = 0;
+
+        // Default values for reset
+        const defaults = {
+            trailLength: 15,
+            starCount: 500,
+            starSpeed: 2,
+            spawnRadius: 0
+        };
+
+        class Particle {
+            constructor() {
+                this.reset();
+            }
+
+            reset() {
+                // Random angle in radians
+                const angle = Math.random() * Math.PI * 2;
+
+                // Start position based on spawn radius
+                this.x = centerX + Math.cos(angle) * spawnRadius;
+                this.y = centerY + Math.sin(angle) * spawnRadius;
+                this.z = 0;
+
+                // Velocity with random speed variation
+                const speedVariation = 0.5 + Math.random() * 2;
+                this.vx = Math.cos(angle) * speedVariation;
+                this.vy = Math.sin(angle) * speedVariation;
+                this.vz = Math.random() * 2 + 1;
+
+                // Trail history
+                this.trail = [];
+
+                // Base size with random variation
+                this.baseSize = 1 + Math.random() * 2;
+            }
+
+            update() {
+                // Update position
+                this.x += this.vx * starSpeed;
+                this.y += this.vy * starSpeed;
+                this.z += this.vz * starSpeed;
+
+                // Add current position to trail
+                this.trail.push({ x: this.x, y: this.y, z: this.z });
+
+                // Limit trail length
+                if (this.trail.length > trailLength) {
+                    this.trail.shift();
+                }
+
+                // Reset if out of bounds or too close
+                if (this.x < -50 || this.x > canvas.width + 50 ||
+                    this.y < -50 || this.y > canvas.height + 50 ||
+                    this.z < -100) {
+                    this.reset();
+                }
+            }
+
+            draw() {
+                // Draw trail
+                for (let i = 0; i < this.trail.length; i++) {
+                    const point = this.trail[i];
+                    const scale = 1 + point.z / 100;
+                    const size = this.baseSize * scale;
+                    const opacity = (i / this.trail.length) * 0.5;
+
+                    ctx.fillStyle = `rgba(255, 255, 255, ${opacity})`;
+                    ctx.shadowBlur = 5;
+                    ctx.shadowColor = 'rgba(255, 255, 255, 0.5)';
+
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                // Draw main particle
+                const scale = 1 + this.z / 100;
+                const size = this.baseSize * scale;
+
+                ctx.fillStyle = 'rgba(255, 255, 255, 1)';
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, size, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Reset shadow for next draw
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        // Initialize particles
+        let particles = [];
+        function initParticles() {
+            particles = [];
+            for (let i = 0; i < starCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+        initParticles();
+
+        // Animation loop
+        function animate() {
+            // Semi-transparent overlay for trail effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // Update and draw all particles
+            particles.forEach(particle => {
+                particle.update();
+                particle.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        // Start animation
+        animate();
+
+        // Control event listeners
+        const trailLengthSlider = document.getElementById('trailLength');
+        const starCountSlider = document.getElementById('starCount');
+        const starSpeedSlider = document.getElementById('starSpeed');
+        const spawnRadiusSlider = document.getElementById('spawnRadius');
+        const resetButton = document.getElementById('resetButton');
+
+        const trailValue = document.getElementById('trailValue');
+        const countValue = document.getElementById('countValue');
+        const speedValue = document.getElementById('speedValue');
+        const radiusValue = document.getElementById('radiusValue');
+
+        trailLengthSlider.addEventListener('input', (e) => {
+            trailLength = parseInt(e.target.value);
+            trailValue.textContent = trailLength;
+        });
+
+        starCountSlider.addEventListener('input', (e) => {
+            starCount = parseInt(e.target.value);
+            countValue.textContent = starCount;
+
+            // Adjust particle count
+            const diff = starCount - particles.length;
+            if (diff > 0) {
+                for (let i = 0; i < diff; i++) {
+                    particles.push(new Particle());
+                }
+            } else if (diff < 0) {
+                particles.splice(starCount);
+            }
+        });
+
+        starSpeedSlider.addEventListener('input', (e) => {
+            starSpeed = parseFloat(e.target.value);
+            speedValue.textContent = starSpeed;
+        });
+
+        spawnRadiusSlider.addEventListener('input', (e) => {
+            spawnRadius = parseInt(e.target.value);
+            radiusValue.textContent = spawnRadius;
+        });
+
+        resetButton.addEventListener('click', () => {
+            // Reset all values to defaults
+            trailLength = defaults.trailLength;
+            starCount = defaults.starCount;
+            starSpeed = defaults.starSpeed;
+            spawnRadius = defaults.spawnRadius;
+
+            // Update sliders
+            trailLengthSlider.value = defaults.trailLength;
+            starCountSlider.value = defaults.starCount;
+            starSpeedSlider.value = defaults.starSpeed;
+            spawnRadiusSlider.value = defaults.spawnRadius;
+
+            // Update displays
+            trailValue.textContent = defaults.trailLength;
+            countValue.textContent = defaults.starCount;
+            speedValue.textContent = defaults.starSpeed;
+            radiusValue.textContent = defaults.spawnRadius;
+
+            // Reinitialize particles
+            initParticles();
+        });
+    </script>
+</body>
+</html>
