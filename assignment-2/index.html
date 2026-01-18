@@ -195,22 +195,18 @@
         };
 
         class Particle {
-            constructor() {
-                this.reset();
+            constructor(initialDelay = false) {
+                this.reset(initialDelay);
             }
 
-            reset() {
+            reset(initialDelay = false) {
                 // Random angle in radians
                 const angle = Math.random() * Math.PI * 2;
 
-                // Random z-position for even distribution
-                const randomZ = Math.random() * 300;
-
-                // Start position based on spawn radius and z-depth
-                const depthOffset = randomZ * 2;
-                this.x = centerX + Math.cos(angle) * (spawnRadius + depthOffset);
-                this.y = centerY + Math.sin(angle) * (spawnRadius + depthOffset);
-                this.z = randomZ;
+                // Start position at center (or spawn radius)
+                this.x = centerX + Math.cos(angle) * spawnRadius;
+                this.y = centerY + Math.sin(angle) * spawnRadius;
+                this.z = 0;
 
                 // Velocity with random speed variation
                 const speedVariation = 0.5 + Math.random() * 2;
@@ -223,9 +219,18 @@
 
                 // Base size with random variation
                 this.baseSize = 1 + Math.random() * 2;
+
+                // Delay counter for staggered initialization
+                this.delay = initialDelay ? Math.random() * 100 : 0;
             }
 
             update() {
+                // Handle delay for staggered start
+                if (this.delay > 0) {
+                    this.delay--;
+                    return;
+                }
+
                 // Update position
                 this.x += this.vx * starSpeed;
                 this.y += this.vy * starSpeed;
@@ -248,6 +253,9 @@
             }
 
             draw() {
+                // Don't draw if still in delay
+                if (this.delay > 0) return;
+
                 // Draw trail
                 for (let i = 0; i < this.trail.length; i++) {
                     const point = this.trail[i];
@@ -286,7 +294,7 @@
         function initParticles() {
             particles = [];
             for (let i = 0; i < starCount; i++) {
-                particles.push(new Particle());
+                particles.push(new Particle(true)); // Enable staggered delays
             }
         }
         initParticles();
