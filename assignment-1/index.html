@@ -19,6 +19,35 @@
 
         p {
             font-weight: bold;
+            font-size: 28px;
+            color: #ff6ec7;
+            text-shadow:
+                0 0 10px #ff6ec7,
+                0 0 20px #ff6ec7,
+                0 0 30px #ff6ec7,
+                0 0 40px #ff1493,
+                0 0 70px #ff1493,
+                0 0 80px #ff1493,
+                0 0 100px #ff1493,
+                0 0 150px #ff1493;
+            animation: neon-flicker 1.5s infinite alternate;
+        }
+
+        @keyframes neon-flicker {
+            0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+                text-shadow:
+                    0 0 10px #ff6ec7,
+                    0 0 20px #ff6ec7,
+                    0 0 30px #ff6ec7,
+                    0 0 40px #ff1493,
+                    0 0 70px #ff1493,
+                    0 0 80px #ff1493,
+                    0 0 100px #ff1493,
+                    0 0 150px #ff1493;
+            }
+            20%, 24%, 55% {
+                text-shadow: none;
+            }
         }
     </style>
 </head>
